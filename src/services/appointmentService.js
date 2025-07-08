@@ -54,21 +54,18 @@ class AppointmentService {
   // Search appointments (for admin)
   async searchAppointments(searchTerm, page = 1, limit = 100) {
     try {
-      const params = new URLSearchParams({
+      console.log('Searching appointments with term:', searchTerm);
+      const params = {
         query: searchTerm,
         page: page.toString(),
         limit: limit.toString()
-      });
+      };
 
-      const response = await apiService.fetchWithFallback(`${this.getApiUrl()}/Appointment/admin/search?${params}`, {
-        method: 'GET',
-        headers: apiService.getHeaders(),
-      });
-      
-      const result = await apiService.handleResponse(response);
+      const result = await apiService.getWithParams('Appointment/admin/search', params);
+      console.log('Search result:', result);
       
       // Backend returns { appointments: [], pagination: {} }
-      return result.appointments || [];
+      return result?.appointments || [];
     } catch (error) {
       console.error('Error searching appointments:', error);
       throw error;

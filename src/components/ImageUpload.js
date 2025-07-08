@@ -20,7 +20,7 @@ import {
     Typography
 } from '@mui/material';
 import React, { useState } from 'react';
-import cloudinaryService from '../services/cloudinaryService';
+import { cloudinaryService } from '../services';
 
 const ImageUpload = ({ 
   value, 

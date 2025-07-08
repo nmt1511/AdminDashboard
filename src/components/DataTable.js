@@ -23,6 +23,9 @@ const DataTable = ({
   emptyMessage = "Không có dữ liệu",
   ...props 
 }) => {
+  // Only show actions if showActions is true AND at least one action handler is provided
+  const shouldShowActions = showActions && (onView || onEdit || onDelete);
+
   return (
     <TableContainer 
       component={Paper} 
@@ -54,7 +57,7 @@ const DataTable = ({
                 {column.label}
               </TableCell>
             ))}
-            {showActions && (
+            {shouldShowActions && (
               <TableCell 
                 align="center" 
                 sx={{ 
@@ -75,7 +78,7 @@ const DataTable = ({
           {data.length === 0 ? (
             <TableRow>
               <TableCell 
-                colSpan={columns.length + (showActions ? 1 : 0)} 
+                colSpan={columns.length + (shouldShowActions ? 1 : 0)} 
                 align="center"
                 sx={{ py: 6 }}
               >
@@ -107,7 +110,7 @@ const DataTable = ({
                     {column.render ? column.render(row, rowIndex) : row[column.field]}
                   </TableCell>
                 ))}
-                {showActions && (
+                {shouldShowActions && (
                   <TableCell align="center" sx={{ py: 2 }}>
                     <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                       {onView && (

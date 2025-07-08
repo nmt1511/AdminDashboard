@@ -1,330 +1,234 @@
 import {
-    CloudUpload as CloudUploadIcon,
-    Delete as DeleteIcon,
-    PhotoCamera as PhotoCameraIcon
+  CloudUpload as CloudUploadIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    IconButton,
-    Paper,
-    Typography,
-    styled
+  Box,
+  CircularProgress,
+  IconButton,
+  Typography
 } from '@mui/material';
 import React, { useRef, useState } from 'react';
 import { useToast } from './ToastProvider';
 
-// Styled component for drag & drop area
-const DropZone = styled(Paper)(({ theme, isDragActive, hasImage }) => ({
-  border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.grey[300]}`,
-  borderRadius: theme.spacing(2),
-  padding: theme.spacing(3),
-  textAlign: 'center',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease',
-  backgroundColor: isDragActive ? theme.palette.primary[50] : 'transparent',
-  position: 'relative',
-  minHeight: hasImage ? 'auto' : 120,
-  '&:hover': {
-    borderColor: theme.palette.primary.main,
-    backgroundColor: theme.palette.primary[50]
-  }
-}));
-
-const HiddenInput = styled('input')({
-  display: 'none'
-});
-
-const DirectImageUpload = ({ 
-  value, 
-  onChange, 
-  disabled = false, 
-  label = "Ảnh thú cưng",
-  maxSize = 10 * 1024 * 1024, // 10MB
-  acceptedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
-  uploadMode = 'preview' // 'preview' (chỉ preview) hoặc 'immediate' (upload ngay)
+const DirectImageUpload = ({
+  currentImageUrl,
+  onImageUpload,
+  onImageRemove,
+  uploading = false,
+  disabled = false,
+  accept = "image/*",
+  maxSize = 5 // MB
 }) => {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState(null);
-  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const toast = useToast();
 
-  // Upload to Cloudinary function
-  const uploadToCloudinary = async (file) => {
-    const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
-
-    if (!cloudName || !uploadPreset) {
-      throw new Error('Cloudinary chưa được cấu hình. Vui lòng kiểm tra file .env');
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-    formData.append('cloud_name', cloudName);
-
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || 'Upload thất bại');
-    }
-
-    return await response.json();
-  };
-
-  // Validate file
-  const validateFile = (file) => {
-    if (!acceptedFormats.includes(file.type)) {
-      return 'Định dạng file không được hỗ trợ. Vui lòng chọn file JPG, PNG, GIF hoặc WebP.';
-    }
-    
-    if (file.size > maxSize) {
-      return `File quá lớn. Kích thước tối đa là ${Math.round(maxSize / 1024 / 1024)}MB.`;
-    }
-    
-    return null;
-  };
-
-  // Handle file upload or preview
-  const handleFileProcess = async (file) => {
-    if (!file) return;
-
-    const validation = validateFile(file);
-    if (validation) {
-      setError(validation);
-      return;
-    }
-
-    setError(null);
-
-    if (uploadMode === 'immediate') {
-      // Upload ngay lập tức (chế độ cũ)
-      setUploading(true);
-      try {
-        console.log('Uploading file:', file.name, 'Size:', file.size);
-        const result = await uploadToCloudinary(file);
-        console.log('Upload successful:', result);
-        
-        onChange(result.secure_url);
-        toast.showSuccess(`Đã upload ảnh "${file.name}" thành công!`);
-      } catch (err) {
-        console.error('Upload error:', err);
-        setError(err.message || 'Upload thất bại. Vui lòng thử lại.');
-        toast.showError('Upload ảnh thất bại: ' + err.message);
-      } finally {
-        setUploading(false);
-      }
-    } else {
-      // Chỉ preview local (chế độ mới)
-      console.log('Preview mode - file selected:', file.name);
-      onChange(file); // Trả về File object thay vì URL
-    }
-  };
-
-  // Handle drag events
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (e.type === "dragleave") {
       setDragActive(false);
     }
   };
 
-  const handleDrop = (e) => {
+  const validateFile = (file) => {
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      return 'Vui lòng chọn file hình ảnh';
+    }
+
+    // Check file size (convert maxSize from MB to bytes)
+    if (file.size > maxSize * 1024 * 1024) {
+      return `Kích thước file không được vượt quá ${maxSize}MB`;
+    }
+
+    return null;
+  };
+
+  const handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
 
-    if (disabled) return;
-
-    const files = e.dataTransfer.files;
-    if (files && files[0]) {
-      handleFileProcess(files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await handleFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleFileSelect = (e) => {
-    const files = e.target.files;
-    if (files && files[0]) {
-      handleFileProcess(files[0]);
-    }
-    // Reset input value để có thể chọn lại cùng file
-    e.target.value = '';
-  };
-
-  const handleClick = () => {
-    if (!disabled && fileInputRef.current) {
-      fileInputRef.current.click();
+  const handleFileSelect = async (e) => {
+    if (e.target.files && e.target.files[0]) {
+      await handleFile(e.target.files[0]);
     }
   };
 
-  const handleRemoveImage = () => {
-    if (disabled) return;
-    onChange('');
-    setError(null);
-  };
-
-  // Get preview URL
-  const getPreviewUrl = () => {
-    if (!value) return null;
-    
-    if (typeof value === 'string') {
-      // Đã có URL (đã upload hoặc existing)
-      return value;
-    } else if (value instanceof File) {
-      // File local - tạo blob URL
-      return URL.createObjectURL(value);
+  const handleFile = async (file) => {
+    const error = validateFile(file);
+    if (error) {
+      toast.showError(error);
+      return;
     }
-    
-    return null;
+
+    try {
+      await onImageUpload(file);
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast.showError(error.message || 'Không thể tải lên hình ảnh');
+    }
   };
 
-  const previewUrl = getPreviewUrl();
-  const isLocalFile = value instanceof File;
-  const isExistingUrl = typeof value === 'string' && value.length > 0;
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageLoad = (e) => {
+    const img = e.target;
+    setImageSize({
+      width: img.naturalWidth,
+      height: img.naturalHeight
+    });
+  };
+
+  // Calculate container dimensions based on image size
+  const getContainerStyle = () => {
+    if (!imageSize.width || !imageSize.height) {
+      return {
+        minHeight: 200,
+        maxHeight: 400
+      };
+    }
+
+    const aspectRatio = imageSize.width / imageSize.height;
+    const maxWidth = 800; // Maximum width we want to allow
+    const maxHeight = 600; // Maximum height we want to allow
+
+    let width, height;
+
+    if (aspectRatio > 1) {
+      // Landscape image
+      width = Math.min(imageSize.width, maxWidth);
+      height = width / aspectRatio;
+      if (height > maxHeight) {
+        height = maxHeight;
+        width = height * aspectRatio;
+      }
+    } else {
+      // Portrait image
+      height = Math.min(imageSize.height, maxHeight);
+      width = height * aspectRatio;
+      if (width > maxWidth) {
+        width = maxWidth;
+        height = width / aspectRatio;
+      }
+    }
+
+    return {
+      width: '100%',
+      height: Math.round(height),
+      maxWidth: Math.round(width)
+    };
+  };
 
   return (
-    <Box>
-      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>
-        {label}
-      </Typography>
+    <Box sx={{ width: '100%', mb: 2 }}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={accept}
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+        disabled={disabled || uploading}
+      />
 
-      <DropZone
-        isDragActive={dragActive}
-        hasImage={!!value}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        onClick={handleClick}
-        sx={{ 
-          opacity: disabled ? 0.6 : 1,
-          cursor: disabled ? 'default' : 'pointer'
-        }}
-      >
-        <HiddenInput
-          ref={fileInputRef}
-          type="file"
-          accept={acceptedFormats.join(',')}
-          onChange={handleFileSelect}
-          disabled={disabled}
-        />
-
-        {previewUrl ? (
-          // Show uploaded/preview image
-          <Box sx={{ position: 'relative' }}>
-            <Box
-              component="img"
-              src={previewUrl}
-              alt="Preview"
-              sx={{
-                width: '100%',
-                maxWidth: 200,
-                height: 150,
-                objectFit: 'cover',
-                borderRadius: 1,
-                mb: 1
-              }}
-              onError={() => setError('Không thể hiển thị ảnh')}
-            />
-            
-            {!disabled && (
-              <IconButton
-                size="small"
-                sx={{
-                  position: 'absolute',
-                  top: -8,
-                  right: -8,
-                  bgcolor: 'error.main',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'error.dark' }
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveImage();
-                }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            )}
-
-            {/* Status indicator */}
-            <Box display="flex" alignItems="center" justifyContent="center" gap={0.5} sx={{ mb: 1 }}>
-              {isLocalFile && (
-                <>
-                  <PhotoCameraIcon fontSize="small" color="warning" />
-                  <Typography variant="caption" color="warning.main" fontWeight="medium">
-                    Ảnh mới (chưa lưu)
-                  </Typography>
-                </>
-              )}
-              {isExistingUrl && (
-                <>
-                  <CloudUploadIcon fontSize="small" color="success" />
-                  <Typography variant="caption" color="success.main" fontWeight="medium">
-                    Đã lưu trên cloud
-                  </Typography>
-                </>
-              )}
-            </Box>
-
-            <Typography variant="body2" color="text.secondary">
-              Click để thay đổi ảnh
-            </Typography>
-          </Box>
-        ) : uploading ? (
-          // Show loading state
-          <Box>
-            <CircularProgress size={40} sx={{ mb: 2 }} />
-            <Typography variant="body1" color="text.secondary">
-              Đang upload ảnh...
-            </Typography>
-          </Box>
-        ) : (
-          // Show upload area
-          <Box>
-            <PhotoCameraIcon sx={{ fontSize: 48, color: 'grey.400', mb: 1 }} />
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              Kéo thả ảnh vào đây
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              hoặc click để chọn file
-            </Typography>
-            <Box display="flex" gap={1} justifyContent="center">
-              <Button
-                variant="contained"
-                startIcon={<PhotoCameraIcon />}
-                disabled={disabled}
-                size="small"
-              >
-                Chọn ảnh
-              </Button>
-            </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Hỗ trợ: JPG, PNG, GIF, WebP (tối đa {Math.round(maxSize / 1024 / 1024)}MB)
-            </Typography>
-            {uploadMode === 'preview' && (
-              <Typography variant="caption" color="warning.main" sx={{ mt: 0.5, display: 'block', fontWeight: 'medium' }}>
-                📌 Ảnh sẽ được lưu khi bạn ấn "Thêm" hoặc "Cập nhật"
+      {!currentImageUrl ? (
+        <Box
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          sx={{
+            border: '2px dashed',
+            borderColor: dragActive ? 'primary.main' : 'grey.300',
+            borderRadius: 1,
+            p: 3,
+            textAlign: 'center',
+            bgcolor: dragActive ? 'action.hover' : 'background.paper',
+            cursor: disabled || uploading ? 'not-allowed' : 'pointer',
+            minHeight: 200,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            '&:hover': {
+              bgcolor: disabled || uploading ? 'background.paper' : 'action.hover'
+            }
+          }}
+          onClick={disabled || uploading ? undefined : handleButtonClick}
+        >
+          {uploading ? (
+            <CircularProgress size={40} />
+          ) : (
+            <>
+              <CloudUploadIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+              <Typography>
+                Kéo thả hình ảnh vào đây hoặc click để chọn file
               </Typography>
-            )}
-          </Box>
-        )}
-      </DropZone>
-
-      {error && (
-        <Alert severity="error" sx={{ mt: 1 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+              <Typography variant="caption" color="textSecondary">
+                Hỗ trợ JPG, PNG, GIF (tối đa {maxSize}MB)
+              </Typography>
+            </>
+          )}
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            position: 'relative',
+            borderRadius: 1,
+            overflow: 'hidden',
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'grey.300',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto',
+            ...getContainerStyle()
+          }}
+        >
+          <Box
+            component="img"
+            src={currentImageUrl}
+            alt="Uploaded"
+            onLoad={handleImageLoad}
+            sx={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain'
+            }}
+          />
+          {!disabled && (
+            <IconButton
+              onClick={onImageRemove}
+              disabled={uploading}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                bgcolor: 'background.paper',
+                boxShadow: 1,
+                '&:hover': {
+                  bgcolor: 'error.light',
+                  color: 'common.white'
+                }
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          )}
+        </Box>
       )}
     </Box>
   );

@@ -1,114 +1,227 @@
 import apiService from './apiService';
 
 class PetService {
-  // Get all pets (admin)
-  async getAllPets() {
-    const result = await apiService.getWithParams('Pet/admin', { page: 1, limit: 1000 });
-    console.log('getAllPets response:', result);
-    // Backend trả về { pets: [...], pagination: {...} }
-    return result?.pets || [];
+  // Get all pets (admin) with pagination and optional customer filter
+  async getAllPets(page = 1, limit = 10, customerId = null) {
+    try {
+      const params = {
+        page,
+        limit
+      };
+
+      // Add customerId filter if provided
+      if (customerId) {
+        params.customerId = customerId;
+      }
+
+      const result = await apiService.getWithParams('Pet/admin', params);
+      console.log('getAllPets response:', result);
+      
+      // Extract pets and pagination info
+      const { pets = [], pagination = {} } = result || {};
+      
+      if (!Array.isArray(pets)) {
+        console.error('Invalid pets data format:', pets);
+        return {
+          pets: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0
+          }
+        };
+      }
+      
+      // Normalize pet data
+      return {
+        pets: pets.map(pet => this.normalizePetData(pet)),
+        pagination
+      };
+    } catch (error) {
+      console.error('Error in getAllPets:', error);
+      return {
+        pets: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        }
+      };
+    }
   }
 
   // Get pet by ID (admin)
   async getPetById(id) {
-    return await apiService.getById('Pet/admin', id);
+    try {
+      const pet = await apiService.getById('Pet/admin', id);
+      return this.normalizePetData(pet);
+    } catch (error) {
+      console.error('Error in getPetById:', error);
+      throw error;
+    }
   }
 
-  // Create new pet (admin) - requires customerId in query params
+  // Create new pet (admin)
   async createPet(petData) {
-    const { customerId, name, species, breed, birthDate, imageUrl, gender } = petData;
-    
-    // Chỉ gửi các trường mà backend mong đợi
-    const petDto = {
-      name: name || '',
-      species: species || null,
-      breed: breed || null,
-      birthDate: birthDate || null,
-      imageUrl: imageUrl || null,
-      gender: gender || null
-    };
-    
-    // Tạo query string với customerId
-    const queryParams = new URLSearchParams({ customerId: customerId.toString() });
-    const url = `Pet/admin?${queryParams.toString()}`;
-    
-    console.log('Creating pet with data:', petDto);
-    console.log('Customer ID:', customerId);
-    
-    // Gọi API với customerId làm query parameter
-    return await apiService.create(url, petDto);
+    try {
+      const { customerId, name, species, breed, birthDate, imageUrl, gender, weight, color, notes } = petData;
+      
+      // Normalize data for API
+      const petDto = {
+        customerId: customerId,
+        name: name || '',
+        species: species || null,
+        breed: breed || null,
+        birthDate: birthDate || null,
+        imageUrl: imageUrl || null,
+        gender: gender || null,
+        weight: weight ? Number(weight) : null,
+        color: color || null,
+        notes: notes || null
+      };
+      
+      console.log('Creating pet with data:', petDto);
+      
+      const result = await apiService.create('Pet/admin', petDto);
+      return this.normalizePetData(result);
+    } catch (error) {
+      console.error('Error in createPet:', error);
+      throw error;
+    }
   }
 
   // Update pet (admin)
   async updatePet(id, petData) {
-    const { name, species, breed, birthDate, imageUrl, gender } = petData;
-    
-    // Chỉ gửi các trường mà backend mong đợi
-    const petDto = {
-      name: name || '',
-      species: species || null,
-      breed: breed || null,
-      birthDate: birthDate || null,
-      imageUrl: imageUrl || null,
-      gender: gender || null
-    };
-    
-    console.log('Updating pet with data:', petDto);
-    
-    return await apiService.update('Pet/admin', id, petDto);
+    try {
+      const { name, species, breed, birthDate, imageUrl, gender, weight, color, notes } = petData;
+      
+      // Normalize data for API
+      const petDto = {
+        name: name || '',
+        species: species || null,
+        breed: breed || null,
+        birthDate: birthDate || null,
+        imageUrl: imageUrl || null,
+        gender: gender || null,
+        weight: weight ? Number(weight) : null,
+        color: color || null,
+        notes: notes || null
+      };
+      
+      console.log('Updating pet with data:', petDto);
+      
+      const result = await apiService.update('Pet/admin', id, petDto);
+      return this.normalizePetData(result);
+    } catch (error) {
+      console.error('Error in updatePet:', error);
+      throw error;
+    }
   }
 
   // Delete pet (admin)
   async deletePet(id) {
-    return await apiService.delete('Pet/admin', id);
+    try {
+      return await apiService.delete('Pet/admin', id);
+    } catch (error) {
+      console.error('Error in deletePet:', error);
+      throw error;
+    }
   }
-
-
 
   // Search pets (admin)
-  async searchPets(searchTerm) {
-    const result = await apiService.getWithParams('Pet/admin/search', { query: searchTerm, page: 1, limit: 1000 });
-    console.log('searchPets response:', result);
-    // Backend trả về { pets: [...], pagination: {...}, searchQuery: "..." }
-    return result?.pets || [];
+  async searchPets(searchTerm, page = 1, limit = 10) {
+    try {
+      const params = {
+        query: searchTerm, 
+        page,
+        limit
+      };
+
+      const result = await apiService.getWithParams('Pet/admin', params);
+      console.log('searchPets response:', result);
+      
+      // Extract pets and pagination info
+      const { pets = [], pagination = {} } = result || {};
+      
+      if (!Array.isArray(pets)) {
+        console.error('Invalid search results format:', pets);
+        return {
+          pets: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0
+          }
+        };
+      }
+      
+      // Normalize pet data
+      return {
+        pets: pets.map(pet => this.normalizePetData(pet)),
+        pagination
+      };
+    } catch (error) {
+      console.error('Error in searchPets:', error);
+      return {
+        pets: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        }
+      };
+    }
   }
 
-  // Get pets by customer (admin)
-  async getPetsByCustomer(customerId) {
-    return await apiService.getWithParams('Pet/admin', { customerId, page: 1, limit: 1000 });
+  // Normalize pet data to ensure consistent structure
+  normalizePetData(pet) {
+    if (!pet) return null;
+    
+    return {
+      petId: pet.petId || pet.PetId,
+      customerId: pet.customerId || pet.CustomerId || pet.userId || pet.UserId,
+      customerName: pet.customerName || pet.CustomerName || pet.ownerName || pet.OwnerName,
+      name: pet.name || pet.Name || '',
+      species: pet.species || pet.Species || null,
+      breed: pet.breed || pet.Breed || null,
+      gender: pet.gender || pet.Gender || null,
+      birthDate: pet.birthDate || pet.BirthDate || null,
+      color: pet.color || pet.Color || null,
+      imageUrl: pet.imageUrl || pet.ImageUrl || null,
+      notes: pet.notes || pet.Notes || null,
+      createdAt: pet.createdAt || pet.CreatedAt || null,
+      updatedAt: pet.updatedAt || pet.UpdatedAt || null
+    };
   }
 
   // Get pet species options
   getSpeciesOptions() {
     return [
-      { value: 'Chó', label: 'Chó' },
-      { value: 'Mèo', label: 'Mèo' },
-      { value: 'Chim', label: 'Chim' },
-      { value: 'Thỏ', label: 'Thỏ' },
-      { value: 'Hamster', label: 'Hamster' },
-      { value: 'Khác', label: 'Khác' }
+      { value: 'dog', label: 'Chó' },
+      { value: 'cat', label: 'Mèo' },
+      { value: 'bird', label: 'Chim' },
+      { value: 'rabbit', label: 'Thỏ' },
+      { value: 'hamster', label: 'Hamster' },
+      { value: 'other', label: 'Khác' }
     ];
   }
 
   // Get gender options
   getGenderOptions() {
     return [
-      { value: 'Đực', label: 'Đực' },
-      { value: 'Cái', label: 'Cái' }
+      { value: 0, label: 'Đực' },
+      { value: 1, label: 'Cái' }
     ];
-  }
-
-  // Format pet data for display
-  formatPetData(pet) {
-    return {
-      ...pet,
-      birthDate: pet.birthDate ? new Date(pet.birthDate).toLocaleDateString('vi-VN') : 'Chưa có',
-      age: pet.birthDate ? this.calculateAge(pet.birthDate) : 'Chưa có'
-    };
   }
 
   // Calculate age from birth date
   calculateAge(birthDate) {
+    if (!birthDate) return 'Chưa có';
+    
     const today = new Date();
     const birth = new Date(birthDate);
     const diffTime = Math.abs(today - birth);
@@ -130,60 +243,14 @@ class PetService {
   formatBirthDateForInput(birthDate) {
     if (!birthDate) return '';
     
-    console.log('🗓️ Formatting birth date for input:', birthDate, 'Type:', typeof birthDate);
-    
     try {
-      // Handle different input formats
-      if (typeof birthDate === 'string') {
-        // Case 1: Already in YYYY-MM-DD format
-        if (/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
-          console.log('🗓️ Already in YYYY-MM-DD format:', birthDate);
-          return birthDate;
-        }
-        
-        // Case 2: ISO datetime string (YYYY-MM-DDTHH:mm:ss)
-        if (birthDate.includes('T')) {
-          const formatted = birthDate.split('T')[0];
-          console.log('🗓️ Converted from ISO datetime:', formatted);
-          return formatted;
-        }
-        
-        // Case 3: DD/MM/YYYY format
-        if (birthDate.includes('/')) {
-          const parts = birthDate.split('/');
-          if (parts.length === 3) {
-            // Assume DD/MM/YYYY and convert to YYYY-MM-DD
-            const [day, month, year] = parts;
-            const formatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-            console.log('🗓️ Converted from DD/MM/YYYY:', formatted);
-            return formatted;
-          }
-        }
-        
-        // Case 4: Try parsing as Date
         const date = new Date(birthDate);
-        if (!isNaN(date.getTime())) {
-          const formatted = date.toISOString().split('T')[0];
-          console.log('🗓️ Converted from Date string:', formatted);
-          return formatted;
-        }
-      }
-      
-      // Case 5: Date object
-      if (birthDate instanceof Date) {
-        const formatted = birthDate.toISOString().split('T')[0];
-        console.log('🗓️ Converted from Date object:', formatted);
-        return formatted;
-      }
-      
-      console.log('🗓️ Could not format birth date, returning empty string');
-      return '';
+      return date.toISOString().split('T')[0];
     } catch (error) {
-      console.error('🗓️ Error formatting birth date:', error);
+      console.error('Error formatting birth date:', error);
       return '';
     }
   }
 }
 
-const petService = new PetService();
-export default petService; 
+export default new PetService(); 

@@ -5,30 +5,46 @@ class CloudinaryService {
     this.uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET || 'your-upload-preset';
   }
 
+  getUploadUrl(resourceType = 'image') {
+    return `https://api.cloudinary.com/v1_1/${this.cloudName}/${resourceType}/upload`;
+  }
+
   // Upload file directly to Cloudinary without widget
-  async uploadFile(file) {
+  async uploadImage(file) {
     if (!this.cloudName || !this.uploadPreset) {
       throw new Error('Cloudinary chưa được cấu hình. Vui lòng kiểm tra file .env');
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', this.uploadPreset);
-    formData.append('cloud_name', this.cloudName);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', this.uploadPreset);
 
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${this.cloudName}/image/upload`, {
-      method: 'POST',
-      body: formData
-    });
+      console.log('Uploading to Cloudinary...', {
+        cloudName: this.cloudName,
+        fileName: file.name,
+        fileSize: file.size
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || 'Upload thất bại');
+      const response = await fetch(this.getUploadUrl('image'), {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Upload thất bại');
+      }
+
+      const result = await response.json();
+      console.log('Cloudinary upload successful:', result);
+      
+      // Return the secure URL for the uploaded image
+      return result.secure_url;
+    } catch (error) {
+      console.error('Cloudinary upload error:', error);
+      throw new Error('Không thể tải lên hình ảnh. Vui lòng thử lại.');
     }
-
-    const result = await response.json();
-    console.log('Cloudinary upload successful:', result);
-    return result;
   }
 
   // Delete uploaded image from Cloudinary
@@ -181,6 +197,56 @@ class CloudinaryService {
     const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
     return match ? match[1] : null;
   }
+
+  // Upload video to Cloudinary
+  async uploadVideo(file, onProgress) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', this.uploadPreset);
+
+    try {
+      const xhr = new XMLHttpRequest();
+      
+      // Return promise that resolves with upload URL or rejects with error
+      return new Promise((resolve, reject) => {
+        xhr.open('POST', this.getUploadUrl('video'), true);
+
+        // Track upload progress
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const progress = Math.round((e.loaded * 100) / e.total);
+            if (onProgress) onProgress(progress);
+          }
+        };
+
+        // Handle response
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            resolve(response.secure_url);
+          } else {
+            reject(new Error('Upload failed'));
+          }
+        };
+
+        // Handle errors
+        xhr.onerror = () => {
+          reject(new Error('Upload failed'));
+        };
+
+        // Start upload
+        xhr.send(formData);
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw new Error('Không thể tải lên video. Vui lòng thử lại.');
+    }
+  }
+
+  extractCloudinaryId(url) {
+    const match = url.match(/\/v\d+\/([^/]+)\./);
+    return match ? match[1] : null;
+  }
 }
 
-export default new CloudinaryService(); 
+export const cloudinaryService = new CloudinaryService(); 

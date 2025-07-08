@@ -17,6 +17,7 @@ import {
   Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { DeleteConfirmDialog } from '../components';
 import DataTable from '../components/DataTable';
 import PageTemplate from '../components/PageTemplate';
 import SearchFilterBar from '../components/SearchFilterBar';
@@ -31,6 +32,8 @@ const ServicesPage = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState('view'); // 'view', 'edit', 'create'
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState(null);
 
   // Toast hook
   const toast = useToast();
@@ -214,13 +217,18 @@ const ServicesPage = () => {
     }
   };
 
-  const handleDeleteService = async (serviceId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')) return;
+  const handleDeleteClick = (service) => {
+    setServiceToDelete(service);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!serviceToDelete) return;
     
     try {
-      // Find service name for success message
-      const service = services.find(s => (s.serviceId || s.ServiceId) === serviceId);
-      const serviceName = service ? (service.name || service.Name || service.serviceName || 'dịch vụ') : 'dịch vụ';
+      setLoading(true);
+      const serviceId = serviceToDelete.serviceId || serviceToDelete.ServiceId;
+      const serviceName = serviceToDelete.name || serviceToDelete.Name || serviceToDelete.serviceName || 'dịch vụ';
       
       await serviceService.deleteService(serviceId);
       await fetchServices();
@@ -231,6 +239,10 @@ const ServicesPage = () => {
     } catch (error) {
       console.error('Error deleting service:', error);
       toast.showError('Không thể xóa dịch vụ. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+      setDeleteDialogOpen(false);
+      setServiceToDelete(null);
     }
   };
 
@@ -344,8 +356,8 @@ const ServicesPage = () => {
 
         <SearchFilterBar
           searchValue={searchTerm}
-          onSearchChange={(e) => handleSearch(e.target.value)}
-          searchPlaceholder="Tìm kiếm theo tên dịch vụ, mô tả..."
+          onSearchChange={handleSearch}
+          placeholder="Tìm kiếm theo tên dịch vụ, mô tả..."
         />
 
         <DataTable
@@ -355,7 +367,7 @@ const ServicesPage = () => {
           emptyMessage="Không có dịch vụ nào"
           onView={(row) => openDialog('view', row)}
           onEdit={(row) => openDialog('edit', row)}
-          onDelete={(row) => handleDeleteService(row.serviceId || row.ServiceId)}
+          onDelete={handleDeleteClick}
         />
       </Paper>
 
@@ -487,6 +499,17 @@ const ServicesPage = () => {
           )}
         </DialogActions>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setServiceToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        loading={loading}
+        title="Xác nhận xóa"
+      />
     </PageTemplate>
   );
 };

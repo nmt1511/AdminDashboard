@@ -1,7 +1,8 @@
-import { Search } from '@mui/icons-material';
+import { Clear as ClearIcon, Search } from '@mui/icons-material';
 import {
     Box,
     FormControl,
+    IconButton,
     InputAdornment,
     InputLabel,
     MenuItem,
@@ -14,11 +15,20 @@ import React from 'react';
 const SearchFilterBar = ({ 
   searchValue, 
   onSearchChange, 
-  searchPlaceholder = "Tìm kiếm...",
+  placeholder = "Tìm kiếm...",
   filters = [],
   children,
-  variant = "standard" // "standard" | "paper"
+  variant = "standard", // "standard" | "paper"
+  onClear
 }) => {
+  const handleClear = () => {
+    if (onClear) {
+      onClear();
+    } else if (onSearchChange) {
+      onSearchChange('');
+    }
+  };
+
   const content = (
     <Box sx={{ 
       display: 'flex', 
@@ -27,24 +37,28 @@ const SearchFilterBar = ({
       alignItems: 'center'
     }}>
       <TextField
-        placeholder={searchPlaceholder}
+        fullWidth
         value={searchValue}
-        onChange={onSearchChange}
-        sx={{ 
-          flex: 1, 
-          minWidth: 300,
-          '& .MuiOutlinedInput-root': { 
-            borderRadius: 2,
-            backgroundColor: 'background.paper'
-          }
-        }}
-        size="small"
+        onChange={(e) => onSearchChange(e.target.value)}
+        placeholder={placeholder}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Search sx={{ color: 'text.secondary' }} />
+              <Search />
             </InputAdornment>
           ),
+          endAdornment: searchValue ? (
+            <InputAdornment position="end">
+              <IconButton
+                aria-label="clear search"
+                onClick={handleClear}
+                edge="end"
+                size="small"
+              >
+                <ClearIcon />
+              </IconButton>
+            </InputAdornment>
+          ) : null
         }}
       />
       

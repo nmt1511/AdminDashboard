@@ -1,15 +1,21 @@
 import apiService from './apiService';
 
 const dashboardService = {
-  // Get dashboard analytics
-  getDashboardAnalytics: async (period = 'month', date = null) => {
+  // Get simple dashboard stats
+  getSimpleDashboard: async () => {
     try {
-      console.log('Getting dashboard analytics for period:', period);
-      const params = { period };
-      if (date) params.date = date;
-      
-      const response = await apiService.getWithParams('/Dashboard/analytics', params);
-      console.log('Dashboard analytics response:', response);
+      const response = await apiService.get('/Dashboard/simple');
+      return response;
+    } catch (error) {
+      console.error('Error getting simple dashboard data:', error);
+      throw error;
+    }
+  },
+
+  // Get detailed analytics
+  getDashboardAnalytics: async (period = 'month') => {
+    try {
+      const response = await apiService.getWithParams('/Dashboard/analytics', { period });
       return response;
     } catch (error) {
       console.error('Error getting dashboard analytics:', error);
@@ -18,14 +24,9 @@ const dashboardService = {
   },
 
   // Get completion trends
-  getCompletionTrends: async (period = 'month', periods = 12, date = null) => {
+  getCompletionTrends: async (period = 'month', periods = 12) => {
     try {
-      console.log('Getting completion trends:', { period, periods });
-      const params = { period, periods };
-      if (date) params.date = date;
-      
-      const response = await apiService.getWithParams('/Dashboard/completion-trends', params);
-      console.log('Completion trends response:', response);
+      const response = await apiService.getWithParams('/Dashboard/completion-trends', { period, periods });
       return response;
     } catch (error) {
       console.error('Error getting completion trends:', error);
@@ -33,20 +34,56 @@ const dashboardService = {
     }
   },
 
-  // Get performance comparison by period
-  getPerformanceByPeriod: async (period = 'month', date = null) => {
+  // Get performance comparison
+  getPerformanceByPeriod: async (period = 'month') => {
     try {
-      console.log('Getting performance by period:', period);
-      const params = { period };
-      if (date) params.date = date;
-      
-      const response = await apiService.getWithParams('/Dashboard/performance-by-period', params);
-      console.log('Performance data response:', response);
+      const response = await apiService.getWithParams('/Dashboard/performance-by-period', { period });
       return response;
     } catch (error) {
       console.error('Error getting performance data:', error);
       throw error;
     }
+  },
+
+  // Get today's appointments
+  getTodayDashboard: async () => {
+    try {
+      const response = await apiService.get('/Dashboard/today');
+      return response;
+    } catch (error) {
+      console.error('Error getting today dashboard:', error);
+      throw error;
+    }
+  },
+
+  // Format number with commas
+  formatNumber: (number) => {
+    if (number === undefined || number === null) return '0';
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  },
+
+  // Get status text
+  getStatusText: (status) => {
+    const statusMap = {
+      0: 'Chờ xác nhận',
+      1: 'Đã xác nhận',
+      2: 'Hoàn thành',
+      3: 'Đã hủy',
+      4: 'Không đến'
+    };
+    return statusMap[status] || 'Không xác định';
+  },
+
+  // Get status color
+  getStatusColor: (status) => {
+    const colorMap = {
+      0: 'warning',
+      1: 'info',
+      2: 'success',
+      3: 'error',
+      4: 'default'
+    };
+    return colorMap[status] || 'default';
   },
 
   // Format chart data for Chart.js
@@ -58,8 +95,30 @@ const dashboardService = {
       };
     }
 
-    // Handle different chart types
     switch (type) {
+      case 'completion-stats':
+        return {
+          labels: ['Hoàn thành', 'Đã hủy', 'Khác'],
+          datasets: [{
+            data: [
+              data.completedAppointments || 0,
+              data.cancelledAppointments || 0,
+              (data.totalAppointments || 0) - (data.completedAppointments || 0) - (data.cancelledAppointments || 0)
+            ],
+            backgroundColor: [
+              'rgba(75, 192, 192, 0.8)',
+              'rgba(255, 99, 132, 0.8)',
+              'rgba(255, 205, 86, 0.8)'
+            ],
+            borderColor: [
+              'rgba(75, 192, 192, 1)',
+              'rgba(255, 99, 132, 1)',
+              'rgba(255, 205, 86, 1)'
+            ],
+            borderWidth: 1
+          }]
+        };
+
       case 'completion-trend':
         return {
           labels: data.map(item => item.period || ''),
@@ -121,62 +180,17 @@ const dashboardService = {
                 'rgba(54, 162, 235, 0.8)',
                 'rgba(255, 205, 86, 0.8)',
                 'rgba(75, 192, 192, 0.8)',
-                'rgba(153, 102, 255, 0.8)',
-                'rgba(255, 159, 64, 0.8)'
-              ],
-              borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 205, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
+                'rgba(153, 102, 255, 0.8)'
               ],
               borderWidth: 1
             }
           ]
         };
 
-      case 'time-series':
-        return {
-          labels: data.map(item => item.date || ''),
-          datasets: [
-            {
-              label: 'Tổng số lịch hẹn',
-              data: data.map(item => item.totalAppointments || 0),
-              borderColor: 'rgb(75, 192, 192)',
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-              tension: 0.1,
-              fill: true
-            },
-            {
-              label: 'Hoàn thành',
-              data: data.map(item => item.completedAppointments || 0),
-              borderColor: 'rgb(54, 162, 235)',
-              backgroundColor: 'rgba(54, 162, 235, 0.2)',
-              tension: 0.1
-            },
-            {
-              label: 'Đã hủy',
-              data: data.map(item => item.cancelledAppointments || 0),
-              borderColor: 'rgb(255, 99, 132)',
-              backgroundColor: 'rgba(255, 99, 132, 0.2)',
-              tension: 0.1
-            }
-          ]
-        };
-
       default:
         return {
-          labels: data.map(item => item.label || item.period || item.date || ''),
-          datasets: [
-            {
-              label: 'Dữ liệu',
-              data: data.map(item => item.value || item.total || 0),
-              borderColor: 'rgb(75, 192, 192)',
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            }
-          ]
+          labels: [],
+          datasets: []
         };
     }
   },
@@ -196,6 +210,17 @@ const dashboardService = {
     };
 
     switch (type) {
+      case 'completion-stats':
+        return {
+          ...baseOptions,
+          plugins: {
+            ...baseOptions.plugins,
+            legend: {
+              position: 'right'
+            }
+          }
+        };
+
       case 'completion-trend':
         return {
           ...baseOptions,
@@ -252,20 +277,6 @@ const dashboardService = {
           }
         };
 
-      case 'time-series':
-        return {
-          ...baseOptions,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Số lượng'
-              }
-            }
-          }
-        };
-
       default:
         return baseOptions;
     }
@@ -281,26 +292,6 @@ const dashboardService = {
       'year': 'Năm'
     };
     return periods[period] || 'Tháng';
-  },
-
-  // Format number with Vietnamese locale
-  formatNumber: (number, type = 'number') => {
-    if (typeof number !== 'number') return '0';
-    
-    switch (type) {
-      case 'percentage':
-        return `${new Intl.NumberFormat('vi-VN', { 
-          minimumFractionDigits: 1, 
-          maximumFractionDigits: 1 
-        }).format(number)}%`;
-      case 'currency':
-        return new Intl.NumberFormat('vi-VN', { 
-          style: 'currency', 
-          currency: 'VND' 
-        }).format(number);
-      default:
-        return new Intl.NumberFormat('vi-VN').format(number);
-    }
   },
 
   getTodayAppointments: async () => {

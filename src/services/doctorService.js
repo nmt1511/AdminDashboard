@@ -41,9 +41,14 @@ class DoctorService {
   async searchDoctors(searchTerm) {
     try {
       console.log('DoctorService: Searching doctors with term:', searchTerm);
-      const result = await apiService.search('Doctor/admin/search', { query: searchTerm });
+      const params = { 
+        query: searchTerm,
+        page: 1,
+        limit: 100
+      };
+      const result = await apiService.getWithParams('Doctor/admin/search', params);
       console.log('DoctorService: API response:', result);
-      return result;
+      return result?.doctors || [];
     } catch (error) {
       console.error('DoctorService: searchDoctors error:', error);
       throw error;

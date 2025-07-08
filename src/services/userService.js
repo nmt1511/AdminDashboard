@@ -2,18 +2,31 @@ import apiService from './apiService';
 
 class UserService {
   // Get all users (admin only)
-  async getAllUsers(page = 1, limit = 100) {
+  async getAllUsers(page = 1, limit = 1000) {
     try {
-      console.log('Calling API: User/list with params:', { page, limit });
-      const response = await apiService.search('User/list', { page, limit });
+      console.log('Calling API: Pet/admin/customers with params:', { page, limit });
+      const response = await apiService.search('Pet/admin/customers', { page, limit });
       console.log('API Response:', response);
-      // API returns { users: [...], pagination: {...} }
-      const users = Array.isArray(response?.users) ? response.users : [];
-      console.log('Extracted users:', users);
-      return users;
+      return {
+        customers: Array.isArray(response?.customers) ? response.customers : [],
+        pagination: response?.pagination || {
+          page: 1,
+          limit: 1000,
+          total: 0,
+          totalPages: 0
+        }
+      };
     } catch (error) {
       console.error('Error fetching all users:', error);
-      return [];
+      return {
+        customers: [],
+        pagination: {
+          page: 1,
+          limit: 1000,
+          total: 0,
+          totalPages: 0
+        }
+      };
     }
   }
 
@@ -45,8 +58,6 @@ class UserService {
       throw error;
     }
   }
-
-
 
   // Update user role (admin only)
   async updateUserRole(userId, newRole) {
@@ -93,22 +104,35 @@ class UserService {
   }
 
   // Search users
-  async searchUsers(searchTerm, page = 1, limit = 100) {
+  async searchUsers(searchTerm, page = 1, limit = 1000) {
     try {
       console.log('UserService: Searching users with term:', searchTerm);
-      const response = await apiService.search('User/list', { 
+      const response = await apiService.search('Pet/admin/customers', { 
         page, 
         limit,
         search: searchTerm 
       });
       console.log('UserService: API response:', response);
-      // API returns { users: [...], pagination: {...} }
-      const users = Array.isArray(response?.users) ? response.users : [];
-      console.log('UserService: Extracted users:', users);
-      return users;
+      return {
+        customers: Array.isArray(response?.customers) ? response.customers : [],
+        pagination: response?.pagination || {
+          page: 1,
+          limit: 1000,
+          total: 0,
+          totalPages: 0
+        }
+      };
     } catch (error) {
       console.error('Error searching users:', error);
-      return [];
+      return {
+        customers: [],
+        pagination: {
+          page: 1,
+          limit: 1000,
+          total: 0,
+          totalPages: 0
+        }
+      };
     }
   }
 

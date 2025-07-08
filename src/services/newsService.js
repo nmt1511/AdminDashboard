@@ -113,19 +113,8 @@ class NewsService {
   // Delete news (for admin)
   async deleteNews(id) {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5074/api'}/News/admin/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return { success: true };
+      const response = await apiService.delete('News/admin', id);
+      return { success: true, message: response?.message || 'Xóa tin tức thành công' };
     } catch (error) {
       console.error('Error deleting news:', error);
       throw error;

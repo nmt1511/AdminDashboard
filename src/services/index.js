@@ -1,7 +1,7 @@
 import apiService from './apiService';
 import appointmentService from './appointmentService';
 import authService from './authService';
-import cloudinaryService from './cloudinaryService';
+import { cloudinaryService } from './cloudinaryService';
 import customerService from './customerService';
 import dashboardService from './dashboardService';
 import doctorService from './doctorService';
@@ -11,7 +11,17 @@ import serviceService from './serviceService';
 import userService from './userService';
 
 export {
-  apiService, appointmentService, authService, cloudinaryService, customerService, dashboardService, doctorService, newsService, petService, serviceService, userService
+    apiService,
+    appointmentService,
+    authService,
+    cloudinaryService,
+    customerService,
+    dashboardService,
+    doctorService,
+    newsService,
+    petService,
+    serviceService,
+    userService
 };
 
 export default {
