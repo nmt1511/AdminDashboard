@@ -12,15 +12,17 @@ import {
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  CustomerDialog,
-  getCustomerTableColumns,
-  validateCustomerForm
+  CustomerDialog
 } from '../components/Customer';
+import { validateCustomerForm } from '../components/Customer/CustomerForm';
+import { getCustomerTableColumns } from '../components/Customer/CustomerTable';
 import DataTable from '../components/DataTable';
 import PageTemplate from '../components/PageTemplate';
 import SearchFilterBar from '../components/SearchFilterBar';
 import { useToast } from '../components/ToastProvider';
 import { userService } from '../services';
+import appointmentService from '../services/appointmentService';
+import petService from '../services/petService';
 
 const CustomersPage = () => {
   const [customers, setCustomers] = useState([]);
@@ -33,6 +35,11 @@ const CustomersPage = () => {
   const [dialogMode, setDialogMode] = useState('view'); // 'view', 'edit', 'create'
   const [selectedTab, setSelectedTab] = useState(0);
   const [searchTimeout, setSearchTimeout] = useState(null);
+  
+  // Customer details data
+  const [customerPets, setCustomerPets] = useState([]);
+  const [customerAppointments, setCustomerAppointments] = useState([]);
+  const [loadingCustomerDetails, setLoadingCustomerDetails] = useState(false);
   
   // Pagination state
   const [page, setPage] = useState(1);
@@ -154,10 +161,50 @@ const CustomersPage = () => {
     }
   };
 
+  // Fetch customer details (pets and appointments)
+  const fetchCustomerDetails = async (customer) => {
+    if (!customer || !customer.customerId) {
+      console.log('No customer or customerId provided');
+      return;
+    }
+    
+    try {
+      setLoadingCustomerDetails(true);
+      console.log('Fetching details for customer:', customer.customerId);
+      
+      // First get the customer's pets
+      const pets = await petService.getPetsByCustomerId(customer.customerId);
+      console.log('Fetched pets:', pets);
+      
+      // Get all appointments and filter by customer's pets
+      const allAppointments = await appointmentService.getAllAppointments(1, 1000);
+      const petIds = pets.map(pet => pet.petId);
+      const customerAppointments = allAppointments.filter(appointment => 
+        petIds.includes(appointment.petId)
+      );
+      
+      console.log('Filtered appointments:', customerAppointments);
+      
+      setCustomerPets(pets || []);
+      setCustomerAppointments(customerAppointments || []);
+      
+    } catch (error) {
+      console.error('Error fetching customer details:', error);
+      setCustomerPets([]);
+      setCustomerAppointments([]);
+    } finally {
+      setLoadingCustomerDetails(false);
+    }
+  };
+
   const openDialog = (mode, customer = null) => {
     setDialogMode(mode);
     setSelectedCustomer(customer);
     setSelectedTab(0); // Reset to first tab
+    
+    // Clear previous customer details
+    setCustomerPets([]);
+    setCustomerAppointments([]);
     
     if (mode === 'create') {
       setFormData({
@@ -181,6 +228,11 @@ const CustomersPage = () => {
         role: customer.role || 0,
         password: ''
       });
+      
+      // Fetch customer details if in view mode
+      if (mode === 'view') {
+        fetchCustomerDetails(customer);
+      }
     }
     
     setFormErrors({});
@@ -374,7 +426,10 @@ const CustomersPage = () => {
         onCreateCustomer={handleCreateCustomer}
         onUpdateCustomer={handleUpdateCustomer}
         loading={loading}
+        loadingCustomerDetails={loadingCustomerDetails}
         selectedCustomer={selectedCustomer}
+        pets={customerPets}
+        appointments={customerAppointments}
         selectedTab={selectedTab}
         onTabChange={setSelectedTab}
       />

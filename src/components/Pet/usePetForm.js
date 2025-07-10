@@ -51,6 +51,7 @@ export const usePetForm = () => {
       const gender = getPetFieldValue(pet, 'gender') || getPetFieldValue(pet, 'Gender') || '';
       
       setFormData({
+        petId: getPetFieldValue(pet, 'petId') || getPetFieldValue(pet, 'PetId') || '',
         customerId: getPetFieldValue(pet, 'customerId') || getPetFieldValue(pet, 'CustomerId') || '',
         name: getPetFieldValue(pet, 'name') || getPetFieldValue(pet, 'Name') || '',
         species: getPetFieldValue(pet, 'species') || getPetFieldValue(pet, 'Species') || '',

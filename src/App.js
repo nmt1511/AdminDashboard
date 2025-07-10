@@ -11,6 +11,7 @@ import AppointmentsPage from './pages/AppointmentsPage';
 import CustomersPage from './pages/CustomersPage';
 import DashboardPage from './pages/DashboardPage';
 import DoctorsPage from './pages/DoctorsPage';
+import FeedbackPage from './pages/FeedbackPage';
 import LoginPage from './pages/LoginPage';
 import Logout from './pages/Logout';
 import NewsPage from './pages/NewsPage';
@@ -115,6 +116,7 @@ function App() {
               <Route path="pets" element={<PetsPage />} />
               <Route path="services" element={<ServicesPage />} />
               <Route path="news" element={<NewsPage />} />
+              <Route path="feedbacks" element={<FeedbackPage />} />
             </Route>
             
             {/* Logout Route */}
@@ -128,6 +130,7 @@ function App() {
             <Route path="/pets" element={<Navigate to="/admin/pets" replace />} />
             <Route path="/services" element={<Navigate to="/admin/services" replace />} />
             <Route path="/news" element={<Navigate to="/admin/news" replace />} />
+            <Route path="/feedbacks" element={<Navigate to="/admin/feedbacks" replace />} />
           </Routes>
         </Router>
       </ToastProvider>

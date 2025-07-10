@@ -5,6 +5,8 @@ import { cloudinaryService } from './cloudinaryService';
 import customerService from './customerService';
 import dashboardService from './dashboardService';
 import doctorService from './doctorService';
+import feedbackService from './feedbackService';
+import medicalHistoryService from './medicalHistoryService';
 import newsService from './newsService';
 import petService from './petService';
 import serviceService from './serviceService';
@@ -18,6 +20,8 @@ export {
     customerService,
     dashboardService,
     doctorService,
+    feedbackService,
+    medicalHistoryService,
     newsService,
     petService,
     serviceService,
@@ -34,5 +38,7 @@ export default {
   customer: customerService,
   news: newsService,
   service: serviceService,
-  doctor: doctorService
+  doctor: doctorService,
+  feedback: feedbackService,
+  medicalHistory: medicalHistoryService
 }; 

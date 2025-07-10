@@ -20,6 +20,7 @@ const CustomerDialog = ({
   onCreateCustomer,
   onUpdateCustomer,
   loading,
+  loadingCustomerDetails,
   selectedCustomer,
   pets,
   appointments,
@@ -47,6 +48,7 @@ const CustomerDialog = ({
             appointments={appointments}
             selectedTab={selectedTab}
             onTabChange={onTabChange}
+            loadingCustomerDetails={loadingCustomerDetails}
           />
         ) : (
           <CustomerForm

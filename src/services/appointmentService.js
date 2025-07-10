@@ -287,6 +287,28 @@ class AppointmentService {
 
     return { valid: true };
   }
+
+  // Get appointments by customer ID (admin) - filter admin appointments by customer
+  async getAppointmentsByCustomerId(customerId) {
+    try {
+      console.log('Getting appointments for customer:', customerId);
+      
+      // Get all appointments and filter by customer
+      const result = await apiService.get('/appointment/admin?limit=1000');
+      console.log('getAppointmentsByCustomerId response:', result);
+      
+      // Backend returns { appointments: [], pagination: {} }
+      const allAppointments = result.appointments || [];
+      
+      // Since we don't have direct customerId in appointments, we'll need to get the customer name
+      // and filter by that, or get pets first to find petIds belonging to this customer
+      return allAppointments; // For now, return all and we'll filter in the frontend
+      
+    } catch (error) {
+      console.error('Error getting appointments by customer ID:', error);
+      return [];
+    }
+  }
 }
 
 const appointmentService = new AppointmentService();

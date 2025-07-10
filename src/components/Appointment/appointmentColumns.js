@@ -1,16 +1,14 @@
-import { Box, MenuItem, TextField } from '@mui/material';
 import React from 'react';
-import { appointmentService } from '../../services';
 import { APPOINTMENT_TABLE_MIN_WIDTHS } from './appointmentConstants';
 import {
-  formatAppointmentDate,
-  formatAppointmentTime,
-  getCustomerName,
-  getDoctorName,
-  getPetName,
-  getServiceName,
-  getStatusChip
+    formatAppointmentDate,
+    formatAppointmentTime,
+    getCustomerName,
+    getDoctorName,
+    getPetName,
+    getServiceName
 } from './appointmentUtils';
+import StatusSelector from './StatusSelector';
 
 /**
  * Get appointment table columns configuration
@@ -74,34 +72,29 @@ export const getAppointmentTableColumns = ({
     field: 'status',
     label: 'Trạng thái',
     minWidth: APPOINTMENT_TABLE_MIN_WIDTHS.STATUS,
-    render: (row) => (
-      <Box display="flex" alignItems="center" gap={1}>
-        {getStatusChip(row.Status !== undefined ? row.Status : row.status)}
-        <TextField
-          select
-          size="small"
-          value={row.Status !== undefined ? row.Status : row.status}
-          onChange={(e) => onStatusUpdate(
-            row.AppointmentId || row.appointmentId, 
-            parseInt(e.target.value)
-          )}
-          sx={{ 
-            minWidth: 120,
-            '& .MuiOutlinedInput-root': {
-              '& fieldset': {
-                border: 'none'
-              }
-            }
-          }}
-        >
-          {appointmentService.getStatusOptions().map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Box>
-    )
+    render: (row) => {
+      // Tạo object appointmentData đầy đủ để truyền cho StatusSelector
+      const appointmentData = {
+        AppointmentId: row.AppointmentId || row.appointmentId,
+        PetId: row.PetId || row.petId,
+        PetName: row.PetName || row.petName || getPetName(row.PetId || row.petId, pets),
+        CustomerName: row.CustomerName || row.customerName || getCustomerName(row.PetId || row.petId, pets, customers),
+        DoctorName: row.DoctorName || row.doctorName || getDoctorName(row.DoctorId || row.doctorId, doctors),
+        ServiceName: row.ServiceName || row.serviceName || getServiceName(row.ServiceId || row.serviceId, services),
+        Notes: row.Notes || row.notes,
+        AppointmentDate: row.AppointmentDate || row.appointmentDate,
+        AppointmentTime: row.AppointmentTime || row.appointmentTime
+      };
+
+      return (
+        <StatusSelector
+          appointmentId={row.AppointmentId || row.appointmentId}
+          currentStatus={row.Status !== undefined ? row.Status : row.status}
+          onStatusUpdate={onStatusUpdate}
+          appointmentData={appointmentData}
+        />
+      );
+    }
   },
   {
     field: 'notes',

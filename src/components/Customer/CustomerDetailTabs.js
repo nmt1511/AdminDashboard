@@ -1,32 +1,34 @@
 import {
-  CalendarToday as CalendarIcon,
-  Person as PersonIcon,
-  Pets as PetsIcon
+    CalendarToday as CalendarIcon,
+    Person as PersonIcon,
+    Pets as PetsIcon
 } from '@mui/icons-material';
 import {
-  Avatar,
-  Box,
-  Chip,
-  Paper,
-  Tab,
-  Tabs,
-  Typography
+    Avatar,
+    Box,
+    Chip,
+    CircularProgress,
+    Paper,
+    Tab,
+    Tabs,
+    Typography
 } from '@mui/material';
 import React from 'react';
 import { formatPhoneNumber, getGenderChip } from './CustomerTable';
 
 const CustomerDetailTabs = ({
   selectedCustomer,
-  pets,
-  appointments,
+  pets = [], // Add default empty array
+  appointments = [], // Add default empty array
   selectedTab,
-  onTabChange
+  onTabChange,
+  loadingCustomerDetails = false
 }) => {
   if (!selectedCustomer) return null;
   
-  const customerPets = pets.filter(pet => pet.userId === selectedCustomer.userId);
-  const petIds = customerPets.map(pet => pet.petId);
-  const customerAppointments = appointments.filter(appointment => petIds.includes(appointment.petId));
+  // The pets and appointments are already filtered by customer from the parent component
+  const customerPets = pets;
+  const customerAppointments = appointments;
 
   const joinDate = selectedCustomer.createdAt ? 
     new Date(selectedCustomer.createdAt).toLocaleDateString('vi-VN') : 'Chưa có';
@@ -111,7 +113,11 @@ const CustomerDetailTabs = ({
       {/* Tab 1: Pets */}
       {selectedTab === 1 && (
         <Box sx={{ p: 3 }}>
-          {customerPets.length === 0 ? (
+          {loadingCustomerDetails ? (
+            <Box display="flex" justifyContent="center" py={4}>
+              <CircularProgress />
+            </Box>
+          ) : customerPets.length === 0 ? (
             <Typography color="text.secondary" textAlign="center" py={4}>
               Khách hàng chưa có thú cưng nào
             </Typography>
@@ -129,14 +135,23 @@ const CustomerDetailTabs = ({
                         {pet.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {pet.species} • {pet.breed} • {pet.age || 'Chưa xác định'} tuổi
+                        {pet.species} {pet.breed && `• ${pet.breed}`} {pet.age !== null && pet.age !== undefined && `• ${pet.age} tuổi`}
                       </Typography>
+                      {pet.gender !== null && pet.gender !== undefined && (
+                        <Typography variant="body2" color="text.secondary">
+                          Giới tính: {pet.gender === 0 ? 'Đực' : pet.gender === 1 ? 'Cái' : 'Không xác định'}
+                        </Typography>
+                      )}
                     </Box>
                     
                     <Chip 
-                      label={pet.gender === 0 ? 'Đực' : 'Cái'} 
+                      label={
+                        pet.gender === 0 ? 'Đực' : 
+                        pet.gender === 1 ? 'Cái' : 
+                        'Không xác định'
+                      } 
                       size="small" 
-                      color={pet.gender === 0 ? 'primary' : 'secondary'}
+                      color={pet.gender === 0 ? 'primary' : pet.gender === 1 ? 'secondary' : 'default'}
                     />
                   </Box>
                 </Paper>
@@ -149,7 +164,11 @@ const CustomerDetailTabs = ({
       {/* Tab 2: Appointments */}
       {selectedTab === 2 && (
         <Box sx={{ p: 3 }}>
-          {customerAppointments.length === 0 ? (
+          {loadingCustomerDetails ? (
+            <Box display="flex" justifyContent="center" py={4}>
+              <CircularProgress />
+            </Box>
+          ) : customerAppointments.length === 0 ? (
             <Typography color="text.secondary" textAlign="center" py={4}>
               Khách hàng chưa có lịch hẹn nào
             </Typography>
@@ -165,12 +184,16 @@ const CustomerDetailTabs = ({
                     <Box flex={1}>
                       <Typography variant="subtitle1">
                         {new Date(appointment.appointmentDate).toLocaleDateString('vi-VN')} 
-                        {' - '} 
-                        {appointment.timeSlot}
+                        {appointment.appointmentTime && ` - ${appointment.appointmentTime}`}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {appointment.reason || 'Khám tổng quát'}
+                        Thú cưng: {appointment.petName} • Dịch vụ: {appointment.serviceName}
                       </Typography>
+                      {appointment.notes && (
+                        <Typography variant="body2" color="text.secondary">
+                          Ghi chú: {appointment.notes}
+                        </Typography>
+                      )}
                     </Box>
                     
                     <Chip 

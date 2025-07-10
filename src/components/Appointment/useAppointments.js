@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { appointmentService, customerService, doctorService, petService, serviceService } from '../../services';
 import { useToast } from '../ToastProvider';
 import {
-  APPOINTMENT_ERROR_MESSAGES,
-  APPOINTMENT_STATUS_FILTERS,
-  APPOINTMENT_SUCCESS_MESSAGES
+    APPOINTMENT_ERROR_MESSAGES,
+    APPOINTMENT_STATUS_FILTERS,
+    APPOINTMENT_SUCCESS_MESSAGES
 } from './appointmentConstants';
 import { processApiData } from './appointmentUtils';
 
@@ -279,3 +279,6 @@ export const useAppointments = () => {
     setStatusFilter
   };
 }; 
+
+// Default export for compatibility
+export default useAppointments; 

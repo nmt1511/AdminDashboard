@@ -177,6 +177,28 @@ class PetService {
     }
   }
 
+  // Get pets by customer ID (admin)
+  async getPetsByCustomerId(customerId) {
+    try {
+      console.log('Getting pets for customer:', customerId);
+      const result = await apiService.get(`/pet/admin?customerId=${customerId}&limit=1000`);
+      console.log('getPetsByCustomerId response:', result);
+      
+      // Extract pets from the response
+      const { pets = [] } = result || {};
+      
+      if (!Array.isArray(pets)) {
+        console.error('Invalid pets data format:', pets);
+        return [];
+      }
+      
+      return pets.map(pet => this.normalizePetData(pet));
+    } catch (error) {
+      console.error('Error in getPetsByCustomerId:', error);
+      return [];
+    }
+  }
+
   // Normalize pet data to ensure consistent structure
   normalizePetData(pet) {
     if (!pet) return null;

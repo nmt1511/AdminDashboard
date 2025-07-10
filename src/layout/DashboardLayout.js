@@ -8,7 +8,8 @@ import {
     Menu as MenuIcon,
     People,
     Pets,
-    Schedule
+    Schedule,
+    Star
 } from '@mui/icons-material';
 import {
     AppBar,
@@ -48,14 +49,15 @@ const DashboardLayout = () => {
   const location = useLocation();
 
   const menuItems = [
-  { text: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
-  { text: 'Lịch khám', icon: <Schedule />, path: '/admin/appointments' },
-  { text: 'Khách hàng', icon: <People />, path: '/admin/customers' },
-  { text: 'Bác sĩ', icon: <MedicalServices />, path: '/admin/doctors' },
-  { text: 'Thú cưng', icon: <Pets />, path: '/admin/pets' },
-  { text: 'Dịch vụ', icon: <LocalHospital />, path: '/admin/services' },
-  { text: 'Tin tức', icon: <Article />, path: '/admin/news' },
-];
+    { text: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
+    { text: 'Lịch khám', icon: <Schedule />, path: '/admin/appointments' },
+    { text: 'Khách hàng', icon: <People />, path: '/admin/customers' },
+    { text: 'Bác sĩ', icon: <MedicalServices />, path: '/admin/doctors' },
+    { text: 'Thú cưng', icon: <Pets />, path: '/admin/pets' },
+    { text: 'Dịch vụ', icon: <LocalHospital />, path: '/admin/services' },
+    { text: 'Tin tức', icon: <Article />, path: '/admin/news' },
+    { text: 'Đánh giá', icon: <Star />, path: '/admin/feedbacks' },
+  ];
 
   // Load user info on component mount
   useEffect(() => {

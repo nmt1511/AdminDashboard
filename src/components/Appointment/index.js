@@ -1,26 +1,16 @@
-// Components
+// Dialog modes and form management
+export { APPOINTMENT_DIALOG_MODES } from './appointmentConstants';
 export { default as AppointmentDialog } from './AppointmentDialog';
+export { default as useAppointmentForm } from './useAppointmentForm';
 
-// Configuration
+// Table components and hooks
 export { getAppointmentTableColumns } from './appointmentColumns';
+export { default as AppointmentTable } from './AppointmentTable';
+export { default as StatusSelector } from './StatusSelector';
+export { default as useAppointments } from './useAppointments';
 
-// Custom Hooks
-export { useAppointmentForm } from './useAppointmentForm';
-export { useAppointments } from './useAppointments';
-
-// Constants
+// Constants and utilities
 export {
-    APPOINTMENT_DIALOG_MODES,
-    APPOINTMENT_ERROR_MESSAGES,
-    APPOINTMENT_INITIAL_FORM_DATA,
-    APPOINTMENT_SEARCH_PLACEHOLDER,
-    APPOINTMENT_STATUS_FILTER_LABELS,
-    APPOINTMENT_STATUS_FILTERS,
-    APPOINTMENT_SUCCESS_MESSAGES,
-    APPOINTMENT_TABLE_MIN_WIDTHS,
-    APPOINTMENT_TIME_SLOTS
+    APPOINTMENT_SEARCH_PLACEHOLDER, APPOINTMENT_STATUS_FILTER_LABELS, APPOINTMENT_STATUS_FILTERS
 } from './appointmentConstants';
-
-// Utilities
-export * from './appointmentUtils';
 

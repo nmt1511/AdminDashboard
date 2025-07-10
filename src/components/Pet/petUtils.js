@@ -298,15 +298,14 @@ export const formatPetSubmissionData = (formData) => {
 /**
  * Get gender chip component
  */
-export const getGenderChip = (gender) => {
-  // Convert to number and handle undefined/null
-  const genderNum = gender !== null && gender !== undefined ? Number(gender) : null;
-  
+export const getPetGenderChip = (gender) => {
+  const color = gender === 'Đực' ? 'primary' : gender === 'Cái' ? 'secondary' : 'default';
   return (
     <Chip 
-      label={genderNum === 0 ? 'Đực' : genderNum === 1 ? 'Cái' : 'Chưa xác định'} 
+      label={gender || 'Chưa xác định'} 
+      color={color} 
       size="small" 
-      color={genderNum === 0 ? 'primary' : genderNum === 1 ? 'secondary' : 'default'}
+      variant="outlined" 
     />
   );
 }; 

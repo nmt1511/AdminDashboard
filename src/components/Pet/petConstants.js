@@ -35,6 +35,7 @@ export const PET_SPECIES_COLOR_MAP = {
 
 // Form initial state
 export const PET_INITIAL_FORM_DATA = {
+  petId: '',
   customerId: '',
   name: '',
   species: '',

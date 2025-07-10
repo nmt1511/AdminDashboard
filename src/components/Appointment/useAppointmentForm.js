@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { calculateAge } from '../Pet/petUtils';
 import {
-  APPOINTMENT_DIALOG_MODES,
-  APPOINTMENT_INITIAL_FORM_DATA
+    APPOINTMENT_DIALOG_MODES,
+    APPOINTMENT_INITIAL_FORM_DATA
 } from './appointmentConstants';
 import { validateAppointmentForm } from './appointmentUtils';
 
@@ -160,3 +160,6 @@ export const useAppointmentForm = ({ pets } = {}) => {
     setDialogMode
   };
 }; 
+
+// Default export for compatibility  
+export default useAppointmentForm; 
