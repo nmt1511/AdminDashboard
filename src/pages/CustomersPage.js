@@ -1,20 +1,20 @@
 import {
-    Add as AddIcon
+  Add as AddIcon
 } from '@mui/icons-material';
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Pagination,
-    Paper,
-    Typography
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Pagination,
+  Paper,
+  Typography
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    CustomerDialog,
-    getCustomerTableColumns,
-    validateCustomerForm
+  CustomerDialog,
+  getCustomerTableColumns,
+  validateCustomerForm
 } from '../components/Customer';
 import DataTable from '../components/DataTable';
 import PageTemplate from '../components/PageTemplate';
@@ -56,21 +56,8 @@ const CustomersPage = () => {
   });
   const [formErrors, setFormErrors] = useState({});
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
-      }
-    };
-  }, [searchTimeout]);
-
   // Get all users (not just customers)
-  const getCustomers = async () => {
+  const getCustomers = useCallback(async () => {
     try {
       const response = await userService.getAllUsers(page, ITEMS_PER_PAGE);
       return {
@@ -78,7 +65,6 @@ const CustomersPage = () => {
         pagination: response.pagination
       };
     } catch (error) {
-      console.error('Error fetching users:', error);
       return {
         customers: [],
         pagination: {
@@ -89,46 +75,53 @@ const CustomersPage = () => {
         }
       };
     }
-  };
+  }, [page]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      console.log('Fetching customers data...');
       const customersData = await getCustomers();
-      console.log('Customers data response:', customersData);
       
       setCustomers(customersData.customers);
       setTotalPages(customersData.pagination.totalPages);
       setTotalCustomers(customersData.pagination.total);
       
     } catch (error) {
-      console.error('Error fetching data:', error);
       setError('Không thể tải dữ liệu. Vui lòng thử lại.');
     } finally {
       setLoading(false);
       setHasLoaded(true);
     }
-  };
+  }, [getCustomers]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
 
   // Debounced search function
   const performSearch = useCallback(async (searchValue) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Performing search with value:', searchValue);
       
       const response = await userService.searchUsers(searchValue, page, ITEMS_PER_PAGE);
-      console.log('Search response:', response);
       
       setCustomers(response.customers);
       setTotalPages(response.pagination.totalPages);
       setTotalCustomers(response.pagination.total);
       
     } catch (error) {
-      console.error('Error searching users:', error);
       setError('Không thể tìm kiếm người dùng. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -136,7 +129,6 @@ const CustomersPage = () => {
   }, [page]);
 
   const handleSearch = (searchValue) => {
-    console.log('handleSearch called with:', searchValue);
     setSearchTerm(searchValue || '');
     
     // Clear previous timeout
@@ -154,7 +146,6 @@ const CustomersPage = () => {
 
   // Handle page change
   const handlePageChange = (event, newPage) => {
-    console.log('Changing to page:', newPage);
     setPage(newPage);
     if (searchTerm) {
       performSearch(searchTerm);
@@ -250,7 +241,6 @@ const CustomersPage = () => {
       toast.showSuccess(`Đã tạo người dùng "${formData.customerName}" thành công!`);
       
     } catch (error) {
-      console.error('Error creating customer:', error);
       toast.showError('Không thể tạo khách hàng. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -280,7 +270,6 @@ const CustomersPage = () => {
       toast.showSuccess(`Đã cập nhật thông tin "${formData.customerName}" thành công!`);
       
     } catch (error) {
-      console.error('Error updating customer:', error);
       toast.showError('Không thể cập nhật khách hàng. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -304,7 +293,6 @@ const CustomersPage = () => {
       toast.showSuccess(`Đã xóa ${customerName} thành công!`);
       
     } catch (error) {
-      console.error('Error deleting customer:', error);
       toast.showError('Không thể xóa người dùng. Vui lòng thử lại.');
     } finally {
       setLoading(false);
